@@ -1,0 +1,147 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    @include flex-between;
+    margin-bottom: $spacing-6;
+}
+
+.title {
+    @include text-h2;
+    color: $color-text-main;
+}
+
+.createButton {
+    background-color: $color-primary-600;
+    color: $color-white;
+    padding: $spacing-3 $spacing-5;
+    border-radius: $radius-md;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $color-primary-500;
+        transform: translateY(-2px);
+        box-shadow: $shadow-md;
+    }
+}
+
+.tableContainer {
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    box-shadow: $shadow-sm;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+        text-align: left;
+        padding: $spacing-4;
+        background-color: $color-bg-main;
+        color: $color-text-muted;
+        @include text-small;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    td {
+        padding: $spacing-4;
+        border-bottom: 1px solid $color-border-light;
+        color: $color-text-main;
+        vertical-align: middle;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover td {
+        background-color: $color-bg-main;
+    }
+}
+
+.nameCell {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+}
+
+.avatarPlaceholder {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-full;
+    background-color: $color-primary-600;
+    color: $color-primary-100;
+    @include flex-center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.fullName {
+    font-weight: 500;
+}
+
+.document {
+    font-size: 0.75rem;
+    color: $color-text-muted;
+}
+
+.roleBadge {
+    display: inline-block;
+    padding: 2px $spacing-2;
+    border-radius: $radius-full;
+    background-color: rgba($color-primary-400, 0.1);
+    color: $color-primary-400;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba($color-primary-400, 0.2);
+}
+
+.actions {
+    display: flex;
+    gap: $spacing-2;
+}
+
+.actionButton {
+    padding: $spacing-2;
+    border-radius: $radius-md;
+    color: $color-text-muted;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &:hover {
+        background-color: $color-bg-main;
+        color: $color-primary-600;
+    }
+
+    &.delete:hover {
+        background-color: rgba($color-danger, 0.1);
+        color: $color-danger;
+    }
+}
+
+.empty {
+    text-align: center;
+    color: $color-text-muted;
+    padding: $spacing-8;
+}
+
+.loading {
+    @include flex-center;
+    padding: $spacing-12;
+    color: $color-primary-300;
+}

@@ -1,0 +1,57 @@
+// _variables.scss
+
+// Colors - Deep Forest Brand
+$color-primary-900: #051F1A; // Sidebar / Deep Background
+$color-primary-800: #082F27; // Navbar
+$color-primary-700: #0C3B32; // Sidebar Alt
+$color-primary-600: #1D5449; // Borders on Dark
+$color-primary-500: #2D6A5D;
+$color-primary-400: #10B981; // Brand Accent (Green)
+$color-primary-300: #6EE7B7;
+$color-primary-100: #D1FAE5; // Text on Dark
+
+// Corporate Light Theme
+$color-bg-main: #F3F4F6; // Light Gray for Page Background
+$color-bg-surface: #FFFFFF; // White for Cards/Panels
+$color-border-light: #E5E7EB; // Light Gray Border
+
+// Text Colors
+$color-text-main: #111827; // Black-ish for Light BG
+$color-text-muted: #6B7280; // Gray for Light BG
+$color-text-on-dark: #F9FAFB; // White for Dark BG (Sidebar/Nav)
+$color-text-muted-on-dark: #9CA3AF;
+
+$color-white: #FFFFFF;
+$color-black: #000000;
+
+$color-danger: #EF4444;
+$color-success: #10B981;
+$color-warning: #F59E0B;
+
+// Spacing
+$spacing-1: 0.25rem; // 4px
+$spacing-2: 0.5rem; // 8px
+$spacing-3: 0.75rem; // 12px
+$spacing-4: 1rem; // 16px
+$spacing-5: 1.25rem; // 20px
+$spacing-6: 1.5rem; // 24px
+$spacing-8: 2rem; // 32px
+$spacing-10: 2.5rem; // 40px
+$spacing-12: 3rem; // 48px
+$spacing-16: 4rem; // 64px
+
+// Border Radius
+$radius-sm: 0.25rem;
+$radius-md: 0.375rem;
+$radius-lg: 0.5rem;
+$radius-xl: 0.75rem;
+$radius-2xl: 1rem;
+$radius-full: 9999px;
+
+// Shadows
+$shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+$shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+// Typography (Outfit)
+$font-family-sans: 'Outfit', sans-serif;

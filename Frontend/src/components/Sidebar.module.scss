@@ -1,0 +1,43 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.sidebar {
+    width: 250px;
+    background-color: $color-primary-700;
+    border-right: 1px solid $color-primary-600;
+    height: calc(100vh - 64px);
+    position: sticky;
+    top: 64px;
+    padding: $spacing-6 $spacing-4;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+    padding: $spacing-3 $spacing-4;
+    border-radius: $radius-md;
+    color: $color-text-muted-on-dark;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: rgba($color-primary-400, 0.1);
+        color: $color-primary-100;
+    }
+
+    &.active {
+        background-color: $color-primary-400;
+        color: $color-primary-900;
+        font-weight: 600;
+        box-shadow: $shadow-sm;
+    }
+}

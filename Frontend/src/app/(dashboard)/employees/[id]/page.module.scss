@@ -1,0 +1,133 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: $spacing-6;
+}
+
+.navRow {
+    @include flex-between;
+    margin-bottom: $spacing-4;
+}
+
+.backLink {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    color: $color-text-muted;
+    font-size: 0.875rem;
+
+    &:hover {
+        color: $color-primary-600;
+        text-decoration: underline;
+    }
+}
+
+.actions {
+    display: flex;
+    gap: $spacing-2;
+}
+
+.actionBtn {
+    @include flex-center;
+    gap: $spacing-2;
+    padding: $spacing-2 $spacing-4;
+    background-color: $color-white;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    color: $color-text-main;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $color-bg-main;
+        border-color: $color-primary-400;
+    }
+
+    &.delete {
+        color: $color-danger;
+        border-color: $color-border-light;
+
+        &:hover {
+            background-color: rgba($color-danger, 0.1);
+            border-color: $color-danger;
+        }
+    }
+}
+
+.title {
+    @include text-h1;
+    font-size: 2.5rem;
+    color: $color-text-main;
+    margin-bottom: $spacing-2;
+}
+
+.roleBadge {
+    display: inline-block;
+    padding: 2px $spacing-3;
+    border-radius: $radius-full;
+    background-color: $color-primary-100;
+    color: $color-primary-800;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.card {
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-lg;
+    padding: $spacing-8;
+    box-shadow: $shadow-sm;
+}
+
+.section {
+    margin-bottom: $spacing-8;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    h3 {
+        @include text-h3;
+        font-size: 1.25rem;
+        color: $color-primary-700;
+        margin-bottom: $spacing-4;
+        padding-bottom: $spacing-2;
+        border-bottom: 1px solid $color-border-light;
+    }
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: $spacing-6;
+}
+
+.field {
+    label {
+        display: block;
+        @include text-small;
+        color: $color-text-muted;
+        margin-bottom: $spacing-1;
+    }
+
+    p {
+        @include text-body;
+        font-weight: 500;
+        color: $color-text-main;
+    }
+
+    .mono {
+        font-family: monospace;
+        font-size: 0.875rem;
+        background-color: $color-bg-main;
+        padding: 2px 4px;
+        border-radius: 4px;
+        color: $color-text-main;
+    }
+}

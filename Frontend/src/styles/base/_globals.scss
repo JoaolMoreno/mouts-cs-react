@@ -1,0 +1,57 @@
+@use '../abstract/variables' as *;
+@use '../abstract/mixins' as *;
+
+// _reset.scss
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+// _globals.scss
+body {
+    background-color: $color-bg-main;
+    color: $color-text-main;
+    font-family: $font-family-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+    @include hover-transition;
+
+    &:hover {
+        color: $color-primary-400;
+    }
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+}

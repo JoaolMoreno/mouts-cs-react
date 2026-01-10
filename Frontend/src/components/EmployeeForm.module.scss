@@ -1,0 +1,118 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: $spacing-6;
+}
+
+.backLink {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    color: $color-text-muted;
+    margin-bottom: $spacing-4;
+    font-size: 0.875rem;
+
+    &:hover {
+        color: $color-primary-600;
+        text-decoration: underline;
+    }
+}
+
+.title {
+    @include text-h2;
+    color: $color-text-main;
+}
+
+.formCard {
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-lg;
+    padding: $spacing-8;
+    box-shadow: $shadow-sm;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-6;
+    margin-bottom: $spacing-8;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+
+    label {
+        @include text-small;
+        font-weight: 500;
+        color: $color-text-main;
+    }
+
+    input,
+    select {
+        width: 100%;
+        padding: $spacing-3;
+        background-color: $color-white;
+        border: 1px solid $color-border-light;
+        border-radius: $radius-md;
+        color: $color-text-main;
+        outline: none;
+        transition: all 0.2s;
+
+        &:focus {
+            border-color: $color-primary-400;
+            box-shadow: 0 0 0 2px rgba($color-primary-400, 0.1);
+        }
+    }
+}
+
+.errorMsg {
+    font-size: 0.75rem;
+    color: $color-danger;
+    margin-top: 4px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.submitBtn {
+    background-color: $color-primary-400;
+    color: $color-primary-900;
+    padding: $spacing-3 $spacing-8;
+    border-radius: $radius-md;
+    font-weight: 600;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+        background-color: $color-primary-300;
+        transform: translateY(-1px);
+        box-shadow: $shadow-md;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.error {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+    border: 1px solid rgba($color-danger, 0.2);
+    padding: $spacing-3;
+    border-radius: $radius-md;
+    margin-bottom: $spacing-6;
+}

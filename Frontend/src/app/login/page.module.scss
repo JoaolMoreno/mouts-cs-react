@@ -1,0 +1,143 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.container {
+    height: 100vh;
+    width: 100%;
+    @include flex-center;
+    background-color: $color-bg-main;
+}
+
+.card {
+    width: 100%;
+    max-width: 400px;
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-xl;
+    padding: $spacing-8;
+    box-shadow: $shadow-lg;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: $spacing-8;
+}
+
+.title {
+    @include text-h2;
+    font-size: 2rem;
+    margin-bottom: $spacing-2;
+    color: $color-primary-600;
+}
+
+.subtitle {
+    @include text-body;
+    color: $color-text-muted;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-5;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+
+    label {
+        @include text-small;
+        font-weight: 500;
+        color: $color-text-main;
+    }
+}
+
+.inputWrapper {
+    position: relative;
+
+    .icon {
+        position: absolute;
+        left: $spacing-3;
+        top: 50%;
+        transform: translateY(-50%);
+        color: $color-text-muted;
+    }
+
+    input {
+        width: 100%;
+        padding: $spacing-3 $spacing-10 $spacing-3 $spacing-10;
+        background-color: $color-white;
+        border: 1px solid $color-border-light;
+        border-radius: $radius-md;
+        color: $color-text-main;
+        outline: none;
+        transition: all 0.2s;
+
+        &:focus {
+            border-color: $color-primary-400;
+            box-shadow: 0 0 0 2px rgba($color-primary-400, 0.1);
+        }
+
+        &::placeholder {
+            color: $color-text-muted;
+        }
+    }
+
+    .togglePassword {
+        position: absolute;
+        right: $spacing-3;
+        top: 50%;
+        transform: translateY(-50%);
+        color: $color-text-muted;
+        cursor: pointer;
+        padding: 0;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+
+        &:hover {
+            color: $color-primary-600;
+        }
+    }
+}
+
+.button {
+    width: 100%;
+    padding: $spacing-3;
+    margin-top: $spacing-2;
+    background-color: $color-primary-600;
+    color: $color-white;
+    font-weight: 600;
+    border-radius: $radius-md;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+        background-color: $color-primary-500;
+        transform: translateY(-1px);
+        box-shadow: $shadow-md;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.error {
+    background-color: rgba($color-danger, 0.1);
+    color: $color-danger;
+    border: 1px solid rgba($color-danger, 0.2);
+    padding: $spacing-2;
+    border-radius: $radius-sm;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.footer {
+    margin-top: $spacing-6;
+    text-align: center;
+    @include text-small;
+    font-size: 0.75rem;
+    color: $color-text-muted;
+}

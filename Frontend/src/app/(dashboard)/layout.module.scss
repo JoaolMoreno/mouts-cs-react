@@ -1,0 +1,28 @@
+@use '@/styles/abstract/variables' as *;
+@use '@/styles/abstract/mixins' as *;
+
+.container {
+    min-height: 100vh;
+    background-color: $color-bg-main;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainWrapper {
+    display: flex;
+    flex: 1;
+}
+
+.content {
+    flex: 1;
+    padding: $spacing-6;
+    overflow-y: auto;
+    height: calc(100vh - 64px);
+}
+
+.loading {
+    height: 100vh;
+    @include flex-center;
+    color: $color-primary-100;
+    @include text-h3;
+}

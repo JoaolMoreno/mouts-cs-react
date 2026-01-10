@@ -1,0 +1,75 @@
+// _mixins.scss
+@use '@/styles/abstract/variables' as *;
+
+// Typography Mixins
+@mixin text-h1 {
+    font-family: $font-family-sans;
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: $color-text-main;
+}
+
+@mixin text-h2 {
+    font-family: $font-family-sans;
+    font-size: 2.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: $color-text-main;
+}
+
+@mixin text-h3 {
+    font-family: $font-family-sans;
+    font-size: 1.75rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: $color-text-main;
+}
+
+@mixin text-body {
+    font-family: $font-family-sans;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: $color-text-main;
+}
+
+@mixin text-small {
+    font-family: $font-family-sans;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: $color-text-muted;
+}
+
+// Layout Mixins
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+@mixin flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+// Interactive
+@mixin hover-transition {
+    transition: all 0.2s ease-in-out;
+}
+
+@mixin glass-panel {
+    background: rgba($color-primary-700, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba($color-primary-500, 0.3);
+    box-shadow: $shadow-lg;
+}
