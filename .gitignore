@@ -98,3 +98,8 @@ Frontend/out/
 
 *.json
 !package.json
+!tsconfig.json
+!jsconfig.json
+!.eslintrc.json
+!next.config.js
+!next.config.mjs
