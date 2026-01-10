@@ -1,0 +1,99 @@
+﻿# Visual Studio / Rider / VSCode
+.vs/
+.vscode/
+.idea/
+*.sln.DotSettings.user
+*.suo
+*.user
+*.userosscache
+*.sln.iml
+*.iml
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+
+# ASP.NET publish
+publish/
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+
+# dotnet tool manifest
+.dotnet-tools.json
+
+# Logs
+*.log
+logs/
+TestResults/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Certificates
+*.pfx
+
+# Entity Framework
+*.db
+*.sqlite
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+**/docker-compose.*.yml
+
+# Node / Next.js
+node_modules/
+**/node_modules/
+.next/
+out/
+.env
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.npmrc
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage & reports
+coverage/
+coverage*.json
+lcov-report/
+
+# Misc
+*.bak
+*.swp
+*.tmp
+
+# Images or large files (if any)
+*.psd
+
+# Ignore publish folder from previous builds
+Backend/bin/
+Backend/obj/
+
+# Backend local settings
+Backend/*.db
+
+# Frontend build artifacts
+Frontend/.next/
+Frontend/out/
+
+# Rider specific
+.idea/
+
+# Keep this file tracked
+!/.gitignore
+
+*.json
+
