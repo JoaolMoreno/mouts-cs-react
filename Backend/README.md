@@ -69,8 +69,12 @@ Unit tests cover critical business logic in `EmployeeService`, including:
 | Method | Endpoint              | Description                                      |
 |--------|-----------------------|--------------------------------------------------|
 | POST   | `/api/auth/login`       | Authenticates and sets the HttpOnly Cookie.      |
+| GET    | `/api/auth/me`          | Retrieves current user details.                  |
+| POST   | `/api/auth/refresh`     | Refreshes the access token using the refresh cookie.|
+| POST   | `/api/auth/logout`      | Logs out, clearing cookies and revoking tokens.  |
 | GET    | `/api/employees`        | Lists employees (Filtered by hierarchy).         |
 | GET    | `/api/employees/{id}`   | Employee details (Validates permission).         |
 | POST   | `/api/employees`        | Registers a new employee.                        |
 | PATCH  | `/api/employees/{id}`   | Partial update of data.                          |
 | DELETE | `/api/employees/{id}`   | Removes an employee.                             |
+| GET    | `/api/roles`            | Lists available roles (Filtered by rank).        |

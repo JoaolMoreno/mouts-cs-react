@@ -32,20 +32,31 @@ We utilize a single, versatile font family to maintain strict consistency across
 
 ## 🎨 Color Palette
 
-### Primary Scheme (Dark Green Corporate)
-| Token | Hex Value | SCSS Variable | Description |
-|:---|:---|:---|:---|
-| **Deep Forest** | `#051F1A` | `$color-primary-900` | Main application background. Deepest green. |
-| **Corporate Green**| `#0C3B32` | `$color-primary-700` | Sidebar, Cards, Modals. |
-| **Emerald Muted** | `#2D6A5D` | `$color-primary-500` | Borders, Dividers, Inactive Icons. |
-| **Vibrant Leaf** | `#10B981` | `$color-primary-400` | Primary Actions, Links, Highlights. |
-| **Mint Mist** | `#D1FAE5` | `$color-primary-100` | Tints, Hovers on dark backgrounds. |
+### Theme Strategy: Corporate Light
+The application uses a "Light Mode" workspace for readability and adding a corporate feel
+
+### Primary Brand Colors (Deep Forest)
+Used for Navigation (Sidebar), Navbar, and Brand Accents.
+| Token | Hex Value | Description |
+|:---|:---|:---|
+| **Deep Forest** | `#051F1A` | Sidebar Background. Deepest green. |
+| **Corporate Green**| `#0C3B32` | Secondary Brand Color. |
+| **Vibrant Leaf** | `#10B981` | Primary Actions / Highlights. |
+
+### Workspace Colors (Light Theme)
+Used for the main content area, cards, and text.
+| Token | Hex Value | Description |
+|:---|:---|:---|
+| **Page Background** | `#F3F4F6` | Light Gray (Sterile/Clean). |
+| **Surface/Card** | `#FFFFFF` | White. |
+| **Text Main** | `#111827` | Dark Gray/Black for readability on light. |
+| **Text Muted** | `#6B7280` | Metadata/Labels. |
 
 ### Functional Colors
 - **Text Primary**: `#F9FAFB` (Off-white) - Used on Dark Backgrounds.
-- **Text Secondary**: `#9CA3AF` (Light Grey) - Subtitles.
 - **Error**: `#EF4444` (Soft Red).
-- **Success**: `#10B981` (Vibrant Leaf - same as primary accent).
+-   **Success**: `#10B981` (Vibrant Leaf - same as primary accent).
+-   **Warning**: `#F59E0B`.
 
 ---
 
