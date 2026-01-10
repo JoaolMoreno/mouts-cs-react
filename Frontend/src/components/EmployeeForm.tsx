@@ -34,7 +34,7 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
     const router = useRouter();
     const [error, setError] = useState('');
 
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: yupResolver(schema),
         context: { isEdit },
         defaultValues: {
@@ -58,7 +58,9 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
             }
         };
         fetchRoles();
+    }, []);
 
+    useEffect(() => {
         if (initialData) {
             reset({
                 ...initialData,
@@ -68,6 +70,12 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
             });
         }
     }, [initialData, reset]);
+
+    useEffect(() => {
+        if (initialData && roles.length > 0) {
+            setValue('roleId', initialData.roleId);
+        }
+    }, [roles, initialData, setValue]);
 
     const onSubmit = async (data: any) => {
         setError('');
@@ -157,6 +165,7 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                     </button>
                 </div>
             </form>
+
         </div>
     );
 }
