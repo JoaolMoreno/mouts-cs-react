@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "Jwt": {
+    "Issuer": "Backend",
+    "Audience": "BackendAudience",
+    "SigningKey": "YourSuperSecretKeyHere",
+    "ExpiryMinutes": 60,
+    "CookieName": "auth_token",
+    "RefreshCookieName": "refresh_token",
+    "RefreshExpiryDays": 7
+  }
+}
