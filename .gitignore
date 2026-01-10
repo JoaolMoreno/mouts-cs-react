@@ -95,5 +95,6 @@ Frontend/out/
 # Keep this file tracked
 !/.gitignore
 
-*.json
 
+*.json
+!package.json
