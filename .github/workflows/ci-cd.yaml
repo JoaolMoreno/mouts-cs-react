@@ -48,6 +48,7 @@ jobs:
 
   build-and-push-frontend:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'develop' }}
     permissions:
       contents: read
       packages: write
@@ -80,3 +81,6 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+
