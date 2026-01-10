@@ -8,6 +8,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_URLS: ${ASPNETCORE_URLS}
       ConnectionStrings__Default: ${CONNECTION_STRINGS_DEFAULT}
+      AllowedHosts: ${ALLOWED_HOSTS}
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
