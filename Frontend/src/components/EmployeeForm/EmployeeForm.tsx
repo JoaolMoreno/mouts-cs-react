@@ -10,7 +10,7 @@ import { Employee, Role } from '@/types';
 import styles from './EmployeeForm.module.scss';
 import { ArrowLeft, PencilSimple } from '@phosphor-icons/react';
 import Link from 'next/link';
-import { ManagerSelectModal } from './ManagerSelectModal';
+import { ManagerSelectModal } from '../ManagerSelectModal/ManagerSelectModal';
 
 const schema = yup.object({
     firstName: yup.string().required('First Name is required'),

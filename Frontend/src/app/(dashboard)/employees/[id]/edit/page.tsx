@@ -1,6 +1,6 @@
 'use client';
 
-import { EmployeeForm } from '@/components/EmployeeForm';
+import { EmployeeForm } from '@/components/EmployeeForm/EmployeeForm';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
 import { useParams } from 'next/navigation';

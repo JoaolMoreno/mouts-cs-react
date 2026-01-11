@@ -26,7 +26,7 @@ jest.mock('next/navigation', () => ({
     }),
 }));
 
-jest.mock('./ManagerSelectModal', () => ({
+jest.mock('../ManagerSelectModal/ManagerSelectModal', () => ({
     ManagerSelectModal: ({ isOpen, onSelect, onClose }: any) => isOpen ? (
         <div data-testid="manager-modal">
             <button onClick={() => {

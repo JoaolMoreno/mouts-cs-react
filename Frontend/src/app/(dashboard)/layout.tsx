@@ -1,7 +1,7 @@
 'use client';
 
-import { Navbar } from '@/components/Navbar';
-import { Sidebar } from '@/components/Sidebar';
+import { Navbar } from '@/components/Navbar/Navbar';
+import { Sidebar } from '@/components/Sidebar/Sidebar';
 import styles from './layout.module.scss';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
