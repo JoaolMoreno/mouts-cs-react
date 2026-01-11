@@ -8,8 +8,9 @@ import api from '@/services/api';
 import { useRouter } from 'next/navigation';
 import { Employee, Role } from '@/types';
 import styles from './EmployeeForm.module.scss';
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft, PencilSimple } from '@phosphor-icons/react';
 import Link from 'next/link';
+import { ManagerSelectModal } from './ManagerSelectModal';
 
 const schema = yup.object({
     firstName: yup.string().required('First Name is required'),
@@ -33,6 +34,9 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
     const [roles, setRoles] = useState<Role[]>([]);
     const router = useRouter();
     const [error, setError] = useState('');
+
+    const [showManagerModal, setShowManagerModal] = useState(false);
+    const [selectedManager, setSelectedManager] = useState<{ id: string; name: string } | null>(null);
 
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: yupResolver(schema),
@@ -68,6 +72,13 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                 birthDate: initialData.birthDate.split('T')[0],
                 password: '',
             });
+
+            if (initialData.managerId && initialData.managerName) {
+                setSelectedManager({
+                    id: initialData.managerId,
+                    name: initialData.managerName,
+                });
+            }
         }
     }, [initialData, reset]);
 
@@ -77,13 +88,27 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
         }
     }, [roles, initialData, setValue]);
 
+    const handleManagerSelect = (manager: Employee | null) => {
+        if (manager) {
+            setSelectedManager({
+                id: manager.id,
+                name: `${manager.firstName} ${manager.lastName}`,
+            });
+        } else {
+            setSelectedManager(null);
+        }
+    };
+
     const onSubmit = async (data: any) => {
         setError('');
         try {
             if (isEdit && initialData) {
                 const { password, ...updateData } = data;
-                const payload = password ? updateData : { ...updateData, password: null };
+                const payload: any = password ? { ...updateData, password } : { ...updateData };
                 if (!payload.password) delete payload.password;
+
+                payload.managerId = selectedManager?.id ?? null;
+                payload.removeManager = !selectedManager?.id;
 
                 await api.patch(`/employees/${initialData.id}`, payload);
             } else {
@@ -152,6 +177,25 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                         {errors.roleId && <span className={styles.errorMsg}>{errors.roleId.message}</span>}
                     </div>
 
+                    {isEdit && initialData && (
+                        <div className={styles.inputGroup}>
+                            <label>Manager</label>
+                            <div className={styles.managerDisplay}>
+                                <span className={styles.managerName}>
+                                    {selectedManager?.name || 'No Manager'}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowManagerModal(true)}
+                                    className={styles.editManagerBtn}
+                                    title="Change Manager"
+                                >
+                                    <PencilSimple size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <div className={styles.inputGroup}>
                         <label>Password {isEdit && '(Leave blank to keep current)'}</label>
                         <input type="password" {...register('password')} placeholder="••••••" />
@@ -166,6 +210,16 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                 </div>
             </form>
 
+            {isEdit && initialData && (
+                <ManagerSelectModal
+                    isOpen={showManagerModal}
+                    onClose={() => setShowManagerModal(false)}
+                    onSelect={handleManagerSelect}
+                    currentEmployeeRank={initialData.rank}
+                    currentEmployeeId={initialData.id}
+                    currentManagerId={selectedManager?.id}
+                />
+            )}
         </div>
     );
 }

@@ -8,7 +8,7 @@ namespace Backend.Services;
 public interface IEmployeeService
 {
     Task<EmployeeResponse?> GetByIdAsync(Guid id, AuthenticatedUserContext current);
-    Task<List<EmployeeResponse>> GetAsync(AuthenticatedUserContext current);
+    Task<PagedResult<EmployeeResponse>> GetAsync(EmployeeListQuery query, AuthenticatedUserContext current);
     Task<EmployeeResponse> CreateAsync(EmployeeCreateRequest request, AuthenticatedUserContext current);
     Task<EmployeeResponse?> UpdateAsync(Guid id, EmployeeUpdateRequest request, AuthenticatedUserContext current);
     Task<bool> DeleteAsync(Guid id, AuthenticatedUserContext current);
@@ -28,11 +28,28 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
         return ToResponse(employee);
     }
 
-    public async Task<List<EmployeeResponse>> GetAsync(AuthenticatedUserContext current)
+    public async Task<PagedResult<EmployeeResponse>> GetAsync(EmployeeListQuery query, AuthenticatedUserContext current)
     {
-        var employees = await QueryByScope(current)
+        var validatedQuery = NormalizeQuery(query);
+        var scoped = QueryByScope(current);
+
+        // Include Role when filtering/sorting by role name
+        if (!string.IsNullOrWhiteSpace(validatedQuery.RoleName) || (validatedQuery.OrderBy != null && validatedQuery.OrderBy.Equals("RoleName", StringComparison.OrdinalIgnoreCase)))
+        {
+            scoped = scoped.Include(e => e.Role);
+        }
+
+        scoped = ApplyFilters(scoped, validatedQuery);
+        scoped = ApplySorting(scoped, validatedQuery);
+
+        var total = await scoped.CountAsync();
+        var items = await scoped
+            .Skip((validatedQuery.Page - 1) * validatedQuery.PageSize)
+            .Take(validatedQuery.PageSize)
             .ToListAsync();
-        return employees.Select(ToResponse).ToList();
+
+        var responses = items.Select(ToResponse).ToList();
+        return new PagedResult<EmployeeResponse>(responses, validatedQuery.Page, validatedQuery.PageSize, total);
     }
 
     public async Task<EmployeeResponse> CreateAsync(EmployeeCreateRequest request, AuthenticatedUserContext current)
@@ -73,6 +90,45 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
         if (entity == null)
         {
             return null;
+        }
+
+        if (request.RemoveManager && request.ManagerId.HasValue)
+        {
+            throw new InvalidOperationException("Cannot specify ManagerId when RemoveManager is true");
+        }
+
+        if (request.RemoveManager)
+        {
+            entity.ManagerId = null;
+        }
+        else if (request.ManagerId.HasValue)
+        {
+            var newManagerId = request.ManagerId.Value;
+            if (newManagerId == entity.Id)
+            {
+                throw new InvalidOperationException("Employee cannot be their own manager");
+            }
+
+            var newManager = await db.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Id == newManagerId)
+                             ?? throw new InvalidOperationException("Manager not found");
+
+            if (newManager.Role == null)
+            {
+                throw new InvalidOperationException("Manager role not found");
+            }
+
+            if (entity.Role == null)
+            {
+                entity.Role = await db.Roles.FirstOrDefaultAsync(r => r.Id == entity.RoleId);
+            }
+
+            var currentRank = entity.Role?.Rank ?? 0;
+            if (newManager.Role.Rank >= currentRank)
+            {
+                throw new InvalidOperationException("Manager must have a higher rank");
+            }
+
+            entity.ManagerId = newManagerId;
         }
 
         if (request.RoleId.HasValue)
@@ -170,5 +226,119 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
             e.BirthDate,
             e.CreatedAtUtc,
             e.UpdatedAtUtc);
+    }
+
+    private static readonly HashSet<string> SortableFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(Employee.FirstName),
+        nameof(Employee.LastName),
+        nameof(Employee.Email),
+        nameof(Employee.Document),
+        nameof(Employee.RoleId),
+        nameof(Employee.BirthDate),
+        nameof(Employee.CreatedAtUtc),
+        nameof(Employee.UpdatedAtUtc),
+        "RoleName"
+    };
+
+    private static EmployeeListQuery NormalizeQuery(EmployeeListQuery query)
+    {
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize is <= 0 or > 100 ? 20 : query.PageSize;
+        var orderBy = string.IsNullOrWhiteSpace(query.OrderBy) ? nameof(Employee.CreatedAtUtc) : query.OrderBy.Trim();
+        var orderDirection = string.IsNullOrWhiteSpace(query.OrderDirection) ? "desc" : query.OrderDirection.Trim();
+        return query with
+        {
+            Page = page,
+            PageSize = pageSize,
+            OrderBy = orderBy,
+            OrderDirection = orderDirection,
+            Search = string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim(),
+            FirstName = string.IsNullOrWhiteSpace(query.FirstName) ? null : query.FirstName.Trim(),
+            LastName = string.IsNullOrWhiteSpace(query.LastName) ? null : query.LastName.Trim(),
+            Email = string.IsNullOrWhiteSpace(query.Email) ? null : query.Email.Trim(),
+            Document = string.IsNullOrWhiteSpace(query.Document) ? null : query.Document.Trim(),
+            RoleName = string.IsNullOrWhiteSpace(query.RoleName) ? null : query.RoleName.Trim()
+        };
+    }
+
+    private IQueryable<Employee> ApplyFilters(IQueryable<Employee> query, EmployeeListQuery filter)
+    {
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.ToLowerInvariant();
+            query = query.Where(e =>
+                e.FirstName.ToLower()!.Contains(term) ||
+                e.LastName.ToLower()!.Contains(term) ||
+                e.Email.ToLower()!.Contains(term) ||
+                e.Document.ToLower()!.Contains(term));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.FirstName))
+        {
+            var first = filter.FirstName.ToLowerInvariant();
+            query = query.Where(e => e.FirstName.ToLower()!.Contains(first));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.LastName))
+        {
+            var last = filter.LastName.ToLowerInvariant();
+            query = query.Where(e => e.LastName.ToLower()!.Contains(last));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Email))
+        {
+            var email = filter.Email.ToLowerInvariant();
+            query = query.Where(e => e.Email.ToLower()!.Contains(email));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Document))
+        {
+            var document = filter.Document.ToLowerInvariant();
+            query = query.Where(e => e.Document.ToLower()!.Contains(document));
+        }
+
+        if (filter.RoleId.HasValue)
+        {
+            query = query.Where(e => e.RoleId == filter.RoleId.Value);
+        }
+
+        if (filter.ManagerId.HasValue)
+        {
+            query = query.Where(e => e.ManagerId == filter.ManagerId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.RoleName))
+        {
+            var rn = filter.RoleName.ToLowerInvariant();
+            query = query.Where(e => e.Role != null && e.Role.Name.ToLower()!.Contains(rn));
+        }
+
+        return query;
+    }
+
+    private IQueryable<Employee> ApplySorting(IQueryable<Employee> query, EmployeeListQuery request)
+    {
+        if (string.IsNullOrWhiteSpace(request.OrderBy) || !SortableFields.Contains(request.OrderBy))
+        {
+            return query.OrderByDescending(e => e.CreatedAtUtc);
+        }
+
+        var orderDir = request.OrderDirection?.ToLowerInvariant();
+        var orderBy = request.OrderBy;
+
+        return (orderBy.ToLowerInvariant()) switch
+        {
+            var f when f == nameof(Employee.FirstName).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.FirstName) : query.OrderByDescending(e => e.FirstName),
+            var f when f == nameof(Employee.LastName).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.LastName) : query.OrderByDescending(e => e.LastName),
+            var f when f == nameof(Employee.Email).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.Email) : query.OrderByDescending(e => e.Email),
+            var f when f == nameof(Employee.Document).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.Document) : query.OrderByDescending(e => e.Document),
+            var f when f == nameof(Employee.RoleId).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.RoleId) : query.OrderByDescending(e => e.RoleId),
+            var f when f == nameof(Employee.BirthDate).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.BirthDate) : query.OrderByDescending(e => e.BirthDate),
+            var f when f == nameof(Employee.CreatedAtUtc).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.CreatedAtUtc) : query.OrderByDescending(e => e.CreatedAtUtc),
+            var f when f == nameof(Employee.UpdatedAtUtc).ToLowerInvariant() => orderDir == "asc" ? query.OrderBy(e => e.UpdatedAtUtc) : query.OrderByDescending(e => e.UpdatedAtUtc),
+            var f when f == "rolename" => orderDir == "asc" ? query.OrderBy(e => e.Role!.Name) : query.OrderByDescending(e => e.Role!.Name),
+            _ => query.OrderByDescending(e => e.CreatedAtUtc)
+        };
     }
 }

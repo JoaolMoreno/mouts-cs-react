@@ -116,3 +116,37 @@
     border-radius: $radius-md;
     margin-bottom: $spacing-6;
 }
+
+.managerDisplay {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: $spacing-3;
+    background-color: $color-white;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+}
+
+.managerName {
+    color: $color-text-main;
+    font-weight: 500;
+}
+
+.editManagerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    background: none;
+    border: none;
+    border-radius: $radius-sm;
+    color: $color-text-muted;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $color-bg-main;
+        color: $color-primary-600;
+    }
+}

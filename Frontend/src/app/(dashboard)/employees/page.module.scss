@@ -16,6 +16,38 @@
     color: $color-text-main;
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+}
+
+.filterButton {
+    background-color: $color-bg-surface;
+    color: $color-text-muted;
+    padding: $spacing-3 $spacing-4;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background-color: $color-bg-surface;
+        color: $color-text-main;
+        border-color: $color-primary-500;
+    }
+
+    &.active {
+        background-color: rgba($color-primary-600, 0.1);
+        color: $color-primary-600;
+        border-color: $color-primary-600;
+    }
+}
+
 .createButton {
     background-color: $color-primary-600;
     color: $color-white;
@@ -35,11 +67,32 @@
 }
 
 .tableContainer {
+    position: relative;
     background-color: $color-bg-surface;
     border: 1px solid $color-border-light;
     border-radius: $radius-lg;
     overflow: hidden;
     box-shadow: $shadow-sm;
+}
+
+.progressBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $color-primary-400, $color-primary-600);
+    animation: progressFill 2s linear forwards;
+    z-index: 10;
+}
+
+@keyframes progressFill {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
 }
 
 .table {
@@ -49,13 +102,13 @@
     th {
         text-align: left;
         padding: $spacing-4;
-        background-color: $color-bg-main;
+        background-color: $color-bg-surface;
         color: $color-text-muted;
         @include text-small;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        border-bottom: 1px solid $color-border-light;
+        border-bottom: 2px solid $color-border-light;
     }
 
     td {
@@ -141,7 +194,97 @@
 }
 
 .loading {
-    @include flex-center;
+    text-align: center;
     padding: $spacing-12;
     color: $color-primary-300;
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+
+    &:hover {
+        color: $color-primary-400;
+    }
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: $spacing-2;
+    }
+
+    svg {
+        flex-shrink: 0;
+        color: $color-primary-500;
+    }
+}
+
+.filterRow {
+    td {
+        padding: $spacing-2 $spacing-4;
+        background-color: $color-bg-surface;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    &:hover td {
+        background-color: $color-bg-surface;
+    }
+}
+
+.filterInput {
+    width: 100%;
+    padding: $spacing-2 $spacing-3;
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    color: $color-text-main;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+
+    &::placeholder {
+        color: $color-text-muted;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-500;
+        box-shadow: 0 0 0 2px rgba($color-primary-500, 0.2);
+    }
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-4;
+    margin-top: $spacing-6;
+    padding: $spacing-4;
+}
+
+.pageButton {
+    padding: $spacing-2 $spacing-4;
+    background-color: $color-bg-surface;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    color: $color-text-main;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+        background-color: $color-primary-600;
+        color: $color-white;
+        border-color: $color-primary-600;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.pageInfo {
+    color: $color-text-muted;
+    font-size: 0.875rem;
 }

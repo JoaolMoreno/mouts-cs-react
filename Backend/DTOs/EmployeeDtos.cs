@@ -18,7 +18,29 @@ public record EmployeeUpdateRequest(
     [MaxLength(50)] string? Document,
     Guid? RoleId,
     DateOnly? BirthDate,
-    [MinLength(6)] string? Password);
+    [MinLength(6)] string? Password,
+    Guid? ManagerId,
+    bool RemoveManager = false);
+
+public record EmployeeListQuery(
+    int Page = 1,
+    int PageSize = 20,
+    string? Search = null,
+    string? OrderBy = null,
+    string? OrderDirection = null,
+    string? FirstName = null,
+    string? LastName = null,
+    string? Email = null,
+    string? Document = null,
+    Guid? RoleId = null,
+    Guid? ManagerId = null,
+    string? RoleName = null);
+
+public record PagedResult<T>(
+    IReadOnlyList<T> Items,
+    int Page,
+    int PageSize,
+    int TotalCount);
 
 public record EmployeeResponse(
     Guid Id,
@@ -34,4 +56,3 @@ public record EmployeeResponse(
     DateOnly BirthDate,
     DateTime CreatedAtUtc,
     DateTime UpdatedAtUtc);
-

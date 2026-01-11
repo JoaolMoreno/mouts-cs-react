@@ -18,3 +18,24 @@ export interface Role {
     name: string;
     rank: number;
 }
+
+export interface PagedResult<T> {
+    items: T[];
+    page: number;
+    pageSize: number;
+    totalCount: number;
+}
+
+export interface EmployeeListQuery {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    orderBy?: string;
+    orderDirection?: 'asc' | 'desc';
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    document?: string;
+    roleId?: string;
+    managerId?: string;
+}

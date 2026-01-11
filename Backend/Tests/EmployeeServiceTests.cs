@@ -124,10 +124,10 @@ public class EmployeeServiceTests
         var sut = new EmployeeService(db, new BCryptPasswordHasher());
         var current = LeaderContext(managerId, leaderRole.Id);
 
-        var list = await sut.GetAsync(current);
+        var list = await sut.GetAsync(new EmployeeListQuery(), current);
 
-        list.Should().HaveCount(1);
-        list.Single().ManagerId.Should().Be(managerId);
+        list.Items.Should().HaveCount(1);
+        list.Items.Single().ManagerId.Should().Be(managerId);
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class EmployeeServiceTests
         var previousHash = employee.PasswordHash;
 
         var sut = new EmployeeService(db, new BCryptPasswordHasher());
-        var update = new EmployeeUpdateRequest("  New ", " Name  ", "NEW@TEST.COM  ", " doc-new  ", null, null, "newpass");
+        var update = new EmployeeUpdateRequest("  New ", " Name  ", "NEW@TEST.COM  ", " doc-new  ", null, null, "newpass", null);
 
         var response = await sut.UpdateAsync(employee.Id, update, current);
 
@@ -203,7 +203,7 @@ public class EmployeeServiceTests
         await db.SaveChangesAsync();
 
         var sut = new EmployeeService(db, new BCryptPasswordHasher());
-        var update = new EmployeeUpdateRequest(null, null, null, null, leaderRole.Id, null, null);
+        var update = new EmployeeUpdateRequest(null, null, null, null, leaderRole.Id, null, null, null);
 
         await FluentActions.Invoking(() => sut.UpdateAsync(employee.Id, update, current)).Should().ThrowAsync<InvalidOperationException>();
     }
@@ -236,7 +236,7 @@ public class EmployeeServiceTests
         await db.SaveChangesAsync();
 
         var sut = new EmployeeService(db, new BCryptPasswordHasher());
-        var update = new EmployeeUpdateRequest(null, null, null, null, null, DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-17)), null);
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-17)), null, null);
 
         await FluentActions.Invoking(() => sut.UpdateAsync(employee.Id, update, current)).Should().ThrowAsync<InvalidOperationException>();
     }
@@ -289,4 +289,475 @@ public class EmployeeServiceTests
         (await sut.DeleteAsync(managed.Id, current)).Should().BeTrue();
         (await sut.DeleteAsync(other.Id, current)).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task GetAsync_should_page_filter_and_sort()
+    {
+        using var db = CreateDb();
+        var directorRole = new Role { Id = Guid.NewGuid(), Name = "Diretor", Rank = 1 };
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        db.Roles.AddRange(directorRole, leaderRole);
+
+        var managerId = Guid.NewGuid();
+        db.Employees.AddRange(
+            new Employee
+            {
+                Id = managerId,
+                FirstName = "Alice",
+                LastName = "Manager",
+                Email = "alice@test.com",
+                Document = "doc-a",
+                RoleId = directorRole.Id,
+                BirthDate = new DateOnly(1980, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-5),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-5),
+                Role = directorRole
+            },
+            new Employee
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Bob",
+                LastName = "Smith",
+                Email = "bob@test.com",
+                Document = "doc-b",
+                RoleId = leaderRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1990, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-3),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-3),
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Charlie",
+                LastName = "Brown",
+                Email = "charlie@test.com",
+                Document = "doc-c",
+                RoleId = leaderRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1992, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-1),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-1),
+                Role = leaderRole
+            });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var query = new EmployeeListQuery(Page: 1, PageSize: 1, Search: "b", OrderBy: nameof(Employee.CreatedAtUtc), OrderDirection: "desc");
+        var result = await sut.GetAsync(query, current);
+
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(1);
+        result.Items.Single().FirstName.Should().Be("Charlie");
+    }
+
+    [Fact]
+    public async Task GetAsync_should_filter_and_sort_by_role_name()
+    {
+        using var db = CreateDb();
+        var directorRole = new Role { Id = Guid.NewGuid(), Name = "Diretor", Rank = 1 };
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.AddRange(directorRole, leaderRole, staffRole);
+
+        var managerId = Guid.NewGuid();
+        db.Employees.AddRange(
+            new Employee
+            {
+                Id = managerId,
+                FirstName = "Alice",
+                LastName = "Manager",
+                Email = "alice@test.com",
+                Document = "doc-a",
+                RoleId = directorRole.Id,
+                BirthDate = new DateOnly(1980, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-5),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-5),
+                Role = directorRole
+            },
+            new Employee
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Bob",
+                LastName = "Smith",
+                Email = "bob@test.com",
+                Document = "doc-b",
+                RoleId = leaderRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1990, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-3),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-3),
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Carol",
+                LastName = "Jones",
+                Email = "carol@test.com",
+                Document = "doc-c",
+                RoleId = staffRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1992, 1, 1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-1),
+                UpdatedAtUtc = DateTime.UtcNow.AddDays(-1),
+                Role = staffRole
+            });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var query = new EmployeeListQuery(Page: 1, PageSize: 5, RoleName: "li", OrderBy: "RoleName", OrderDirection: "desc");
+        var result = await sut.GetAsync(query, current);
+
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().HaveCount(1);
+        result.Items.Single().RoleName.Should().Be("Lider");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_change_manager_when_valid()
+    {
+        using var db = CreateDb();
+        var directorRole = new Role { Id = Guid.NewGuid(), Name = "Diretor", Rank = 1 };
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.AddRange(directorRole, leaderRole, staffRole);
+
+        var oldManagerId = Guid.NewGuid();
+        var newManagerId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+
+        db.Employees.AddRange(
+            new Employee
+            {
+                Id = oldManagerId,
+                FirstName = "Old",
+                LastName = "Manager",
+                Email = "old.manager@test.com",
+                Document = "m-old",
+                RoleId = leaderRole.Id,
+                BirthDate = new DateOnly(1980,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = newManagerId,
+                FirstName = "New",
+                LastName = "Manager",
+                Email = "new.manager@test.com",
+                Document = "m-new",
+                RoleId = leaderRole.Id,
+                BirthDate = new DateOnly(1982,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = employeeId,
+                FirstName = "Staff",
+                LastName = "Member",
+                Email = "staff@test.com",
+                Document = "doc-staff",
+                RoleId = staffRole.Id,
+                ManagerId = oldManagerId,
+                BirthDate = new DateOnly(1990,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = staffRole
+            });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, newManagerId);
+        var res = await sut.UpdateAsync(employeeId, update, current);
+
+        res.Should().NotBeNull();
+        var updated = await db.Employees.FirstAsync(e => e.Id == employeeId);
+        updated.ManagerId.Should().Be(newManagerId);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_fail_when_setting_self_as_manager()
+    {
+        using var db = CreateDb();
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.AddRange(leaderRole, staffRole);
+
+        var employeeId = Guid.NewGuid();
+        db.Employees.Add(new Employee
+        {
+            Id = employeeId,
+            FirstName = "Staff",
+            LastName = "Self",
+            Email = "self@test.com",
+            Document = "doc-self",
+            RoleId = staffRole.Id,
+            ManagerId = Guid.NewGuid(),
+            BirthDate = new DateOnly(1990,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = staffRole
+        });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, employeeId);
+        await FluentActions.Invoking(() => sut.UpdateAsync(employeeId, update, current)).Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_fail_when_new_manager_rank_not_higher()
+    {
+        using var db = CreateDb();
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        db.Roles.Add(leaderRole);
+
+        var manager1 = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "M1",
+            LastName = "Mgr",
+            Email = "m1@test.com",
+            Document = "m1",
+            RoleId = leaderRole.Id,
+            BirthDate = new DateOnly(1980,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = leaderRole
+        };
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "LeaderLike",
+            LastName = "User",
+            Email = "leaduser@test.com",
+            Document = "doc-lead",
+            RoleId = leaderRole.Id, // same rank as manager1
+            ManagerId = manager1.Id,
+            BirthDate = new DateOnly(1990,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = leaderRole
+        };
+        db.Employees.AddRange(manager1, employee);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, manager1.Id);
+        await FluentActions.Invoking(() => sut.UpdateAsync(employee.Id, update, current)).Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_throw_when_manager_not_found()
+    {
+        using var db = CreateDb();
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(staffRole);
+
+        var employeeId = Guid.NewGuid();
+        db.Employees.Add(new Employee
+        {
+            Id = employeeId,
+            FirstName = "Staff",
+            LastName = "NoMgr",
+            Email = "nomgr@test.com",
+            Document = "doc-nomgr",
+            RoleId = staffRole.Id,
+            ManagerId = Guid.NewGuid(),
+            BirthDate = new DateOnly(1990,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = staffRole
+        });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, Guid.NewGuid()); // manager id that doesn't exist
+        await FluentActions.Invoking(() => sut.UpdateAsync(employeeId, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Manager not found");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_throw_when_manager_role_missing()
+    {
+        using var db = CreateDb();
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(staffRole);
+
+        // Manager that references a non-existent role (Role navigation will be null)
+        var manager = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Ghost",
+            LastName = "Manager",
+            Email = "ghost@test.com",
+            Document = "mgr-ghost",
+            RoleId = Guid.NewGuid(), // no Role with this id is added to db.Roles
+            BirthDate = new DateOnly(1980,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = null
+        };
+
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Staff",
+            LastName = "Receiver",
+            Email = "receiver@test.com",
+            Document = "doc-recv",
+            RoleId = staffRole.Id,
+            ManagerId = Guid.NewGuid(),
+            BirthDate = new DateOnly(1990,1,1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = staffRole
+        };
+
+        db.Employees.Add(manager);
+        db.Employees.Add(employee);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, manager.Id);
+        await FluentActions.Invoking(() => sut.UpdateAsync(employee.Id, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Manager not found");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_remove_manager_when_requested()
+    {
+        using var db = CreateDb();
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.AddRange(leaderRole, staffRole);
+
+        var managerId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+
+        db.Employees.AddRange(
+            new Employee
+            {
+                Id = managerId,
+                FirstName = "Manager",
+                LastName = "One",
+                Email = "mgr@test.com",
+                Document = "mgr-1",
+                RoleId = leaderRole.Id,
+                BirthDate = new DateOnly(1980,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = employeeId,
+                FirstName = "Staff",
+                LastName = "Member",
+                Email = "staff@test.com",
+                Document = "doc-staff",
+                RoleId = staffRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1990,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = staffRole
+            });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, null, true);
+        var res = await sut.UpdateAsync(employeeId, update, current);
+
+        res.Should().NotBeNull();
+        var updated = await db.Employees.FirstAsync(e => e.Id == employeeId);
+        updated.ManagerId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_throw_when_remove_and_managerid_provided()
+    {
+        using var db = CreateDb();
+        var leaderRole = new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 };
+        var staffRole = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.AddRange(leaderRole, staffRole);
+
+        var managerId = Guid.NewGuid();
+        var employeeId = Guid.NewGuid();
+
+        db.Employees.AddRange(
+            new Employee
+            {
+                Id = managerId,
+                FirstName = "Manager",
+                LastName = "One",
+                Email = "mgr@test.com",
+                Document = "mgr-1",
+                RoleId = leaderRole.Id,
+                BirthDate = new DateOnly(1980,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = leaderRole
+            },
+            new Employee
+            {
+                Id = employeeId,
+                FirstName = "Staff",
+                LastName = "Member",
+                Email = "staff@test.com",
+                Document = "doc-staff",
+                RoleId = staffRole.Id,
+                ManagerId = managerId,
+                BirthDate = new DateOnly(1990,1,1),
+                PasswordHash = "hash",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                Role = staffRole
+            });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var current = DirectorContext();
+
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, managerId, true);
+        await FluentActions.Invoking(() => sut.UpdateAsync(employeeId, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Cannot specify ManagerId when RemoveManager is true");
+    }
+
 }

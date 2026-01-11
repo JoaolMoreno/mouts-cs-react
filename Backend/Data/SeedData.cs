@@ -10,9 +10,9 @@ public static class SeedData
         if (!await db.Roles.AnyAsync())
         {
             db.Roles.AddRange(
-                new Role { Id = Guid.NewGuid(), Name = "Diretor", Rank = 1 },
-                new Role { Id = Guid.NewGuid(), Name = "Lider", Rank = 2 },
-                new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 }
+                new Role { Id = Guid.NewGuid(), Name = "Director", Rank = 1 },
+                new Role { Id = Guid.NewGuid(), Name = "Leader", Rank = 2 },
+                new Role { Id = Guid.NewGuid(), Name = "Employee", Rank = 3 }
             );
 
             await db.SaveChangesAsync();
