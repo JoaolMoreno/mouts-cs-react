@@ -66,8 +66,8 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
         var entity = new Employee
         {
             Id = Guid.NewGuid(),
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
+            FirstName = request.FirstName.Trim().ToUpperInvariant(),
+            LastName = request.LastName.Trim().ToUpperInvariant(),
             Email = request.Email.Trim().ToLowerInvariant(),
             Document = request.Document.Trim(),
             RoleId = request.RoleId,
@@ -143,8 +143,8 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
             entity.BirthDate = request.BirthDate.Value;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.FirstName)) entity.FirstName = request.FirstName.Trim();
-        if (!string.IsNullOrWhiteSpace(request.LastName)) entity.LastName = request.LastName.Trim();
+        if (!string.IsNullOrWhiteSpace(request.FirstName)) entity.FirstName = request.FirstName.Trim().ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(request.LastName)) entity.LastName = request.LastName.Trim().ToUpperInvariant();
         if (!string.IsNullOrWhiteSpace(request.Email)) entity.Email = request.Email.Trim().ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(request.Document)) entity.Document = request.Document.Trim();
         if (!string.IsNullOrWhiteSpace(request.Password)) entity.PasswordHash = hasher.Hash(request.Password);

@@ -10,18 +10,28 @@ using Microsoft.IdentityModel.Tokens;
 using Backend.Data;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace Backend.Controllers;
 
+/// <summary>
+/// Authentication endpoints: login, refresh tokens and logout.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions, AppDbContext db)
     : ControllerBase
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
+    /// <summary>
+    /// Authenticate using email and password. Returns tokens as cookies.
+    /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var user = await authService.ValidateCredentialsAsync(request.Email, request.Password);
@@ -61,8 +71,13 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         });
     }
 
+    /// <summary>
+    /// Returns information about the current authenticated user.
+    /// </summary>
     [HttpGet("me")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Me()
     {
         if (!(User?.Identity?.IsAuthenticated ?? false))
@@ -90,8 +105,13 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         });
     }
 
+    /// <summary>
+    /// Refresh access token using refresh cookie.
+    /// </summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh()
     {
         if (!Request.Cookies.TryGetValue(_jwtOptions.RefreshCookieName, out var refreshToken))
@@ -123,7 +143,11 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
         return Ok(new { message = "Refreshed" });
     }
 
+    /// <summary>
+    /// Logs out the user by revoking the refresh token and clearing cookies.
+    /// </summary>
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
         if (Request.Cookies.TryGetValue(_jwtOptions.RefreshCookieName, out var refreshToken))
