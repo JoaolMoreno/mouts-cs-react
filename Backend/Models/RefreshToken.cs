@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Backend.Models;
+﻿namespace Backend.Models;
 
 public class RefreshToken
 {

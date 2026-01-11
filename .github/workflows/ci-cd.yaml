@@ -21,6 +21,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Restore Backend dependencies
+        run: dotnet restore Backend/Backend.csproj
+
+      - name: Run Backend tests
+        run: dotnet test Backend/Backend.csproj --no-build --verbosity normal
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -57,6 +68,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm ci
+        working-directory: Frontend
+
+      - name: Run Frontend tests
+        run: npm test
+        working-directory: Frontend
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -83,4 +109,3 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
-

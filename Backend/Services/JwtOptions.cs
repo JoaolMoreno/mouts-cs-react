@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Backend.Services;
+﻿namespace Backend.Services;
 
 public class JwtOptions
 {
