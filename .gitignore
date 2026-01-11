@@ -98,6 +98,7 @@ Frontend/out/
 
 *.json
 !package.json
+!package-lock.json
 !tsconfig.json
 !jsconfig.json
 !.eslintrc.json
