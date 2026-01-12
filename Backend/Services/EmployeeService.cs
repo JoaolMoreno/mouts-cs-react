@@ -25,6 +25,7 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
         }
         var manager = await db.Employees.FirstOrDefaultAsync(e => e.Id == employee.ManagerId);
         employee.Manager = manager;
+        employee.Phones = await db.Phones.Where(p => p.EmployeeId == id).ToListAsync();
         return ToResponse(employee);
     }
 
@@ -62,6 +63,11 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
         var existingDocument = await db.Employees.AnyAsync(e => e.Document == request.Document.Trim());
         if (existingDocument) throw new InvalidOperationException("Document already in use");
 
+        if (request.Phones != null)
+        {
+            await ValidatePhonesAsync(request.Phones);
+        }
+
         var now = DateTime.UtcNow;
         var entity = new Employee
         {
@@ -80,6 +86,23 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
 
         db.Employees.Add(entity);
         await db.SaveChangesAsync();
+
+        // Add phones if provided
+        if (request.Phones != null && request.Phones.Any())
+        {
+            foreach (var phoneDto in request.Phones)
+            {
+                var phone = new Phone
+                {
+                    EmployeeId = entity.Id,
+                    Number = phoneDto.Number.Trim(),
+                    Type = phoneDto.Type?.Trim(),
+                    IsPrimary = phoneDto.IsPrimary
+                };
+                db.Phones.Add(phone);
+            }
+            await db.SaveChangesAsync();
+        }
 
         return ToResponse(await LoadWithRole(entity.Id));
     }
@@ -153,6 +176,30 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
 
         await db.SaveChangesAsync();
 
+        // Handle phones
+        if (request.Phones != null)
+        {
+            await ValidatePhonesAsync(request.Phones, id);
+
+            // Remove existing phones
+            var existingPhones = await db.Phones.Where(p => p.EmployeeId == id).ToListAsync();
+            db.Phones.RemoveRange(existingPhones);
+
+            // Add new phones
+            foreach (var phoneDto in request.Phones)
+            {
+                var phone = new Phone
+                {
+                    EmployeeId = id,
+                    Number = phoneDto.Number.Trim(),
+                    Type = phoneDto.Type?.Trim(),
+                    IsPrimary = phoneDto.IsPrimary
+                };
+                db.Phones.Add(phone);
+            }
+            await db.SaveChangesAsync();
+        }
+
         return ToResponse(await LoadWithRole(entity.Id));
     }
 
@@ -204,11 +251,13 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
     {
         var entity = await db.Employees.Include(e => e.Role)
             .FirstAsync(e => e.Id == id);
+        entity.Phones = await db.Phones.Where(p => p.EmployeeId == id).ToListAsync();
         return entity;
     }
 
     private static EmployeeResponse ToResponse(Employee e)
     {
+        var phones = e.Phones.Select(p => new PhoneDto(p.Number, p.Type, p.IsPrimary)).ToList();
         return new EmployeeResponse(
             e.Id,
             e.FirstName,
@@ -225,7 +274,8 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
             e.ManagerId,
             e.BirthDate,
             e.CreatedAtUtc,
-            e.UpdatedAtUtc);
+            e.UpdatedAtUtc,
+            phones);
     }
 
     private static readonly HashSet<string> SortableFields = new(StringComparer.OrdinalIgnoreCase)
@@ -340,5 +390,25 @@ public class EmployeeService(AppDbContext db, IPasswordHasher hasher) : IEmploye
             var f when f == "rolename" => orderDir == "asc" ? query.OrderBy(e => e.Role!.Name) : query.OrderByDescending(e => e.Role!.Name),
             _ => query.OrderByDescending(e => e.CreatedAtUtc)
         };
+    }
+
+    private async Task ValidatePhonesAsync(List<PhoneDto> phones, Guid? employeeId = null)
+    {
+        if (phones.Count(p => p.IsPrimary) > 1)
+        {
+            throw new InvalidOperationException("Only one phone can be primary");
+        }
+
+        var numbers = phones.Select(p => p.Number.Trim()).ToList();
+        var query = db.Phones.Where(p => numbers.Contains(p.Number));
+        if (employeeId.HasValue)
+        {
+            query = query.Where(p => p.EmployeeId != employeeId.Value);
+        }
+        var existingNumbers = await query.Select(p => p.Number).ToListAsync();
+        if (existingNumbers.Any())
+        {
+            throw new InvalidOperationException($"Phone number(s) already in use: {string.Join(", ", existingNumbers)}");
+        }
     }
 }

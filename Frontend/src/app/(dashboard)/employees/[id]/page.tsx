@@ -98,6 +98,22 @@ export default function EmployeeDetailsPage() {
                         </div>
                     </div>
                 </div>
+
+                <div className={styles.section}>
+                    <h3>Contact Information</h3>
+                    {employee.phones && employee.phones.length > 0 ? (
+                        <div className={styles.grid}>
+                            {employee.phones.map((phone, index) => (
+                                <div key={index} className={styles.field}>
+                                    <label>{phone.type || 'Phone'} {phone.isPrimary && '(Primary)'}</label>
+                                    <p>{phone.number}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className={styles.emptyText}>No phones registered.</p>
+                    )}
+                </div>
             </div>
         </div>
     );

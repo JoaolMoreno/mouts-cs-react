@@ -2,6 +2,11 @@
 
 namespace Backend.DTOs;
 
+public record PhoneDto(
+    [Required, MaxLength(20)] string Number,
+    [MaxLength(50)] string? Type,
+    bool IsPrimary = false);
+
 public record EmployeeCreateRequest(
     [Required, MaxLength(100)] string FirstName,
     [Required, MaxLength(100)] string LastName,
@@ -9,7 +14,8 @@ public record EmployeeCreateRequest(
     [Required, MaxLength(50)] string Document,
     [Required] Guid RoleId,
     [Required] DateOnly BirthDate,
-    [Required, MinLength(6)] string Password);
+    [Required, MinLength(6)] string Password,
+    List<PhoneDto> Phones = null);
 
 public record EmployeeUpdateRequest(
     [MaxLength(100)] string? FirstName,
@@ -20,7 +26,8 @@ public record EmployeeUpdateRequest(
     DateOnly? BirthDate,
     [MinLength(6)] string? Password,
     Guid? ManagerId,
-    bool RemoveManager = false);
+    bool RemoveManager = false,
+    List<PhoneDto>? Phones = null);
 
 public record EmployeeListQuery(
     int Page = 1,
@@ -55,4 +62,5 @@ public record EmployeeResponse(
     Guid? ManagerId,
     DateOnly BirthDate,
     DateTime CreatedAtUtc,
-    DateTime UpdatedAtUtc);
+    DateTime UpdatedAtUtc,
+    List<PhoneDto> Phones);

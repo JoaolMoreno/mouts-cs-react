@@ -131,3 +131,9 @@
         color: $color-text-main;
     }
 }
+
+.emptyText {
+    color: $color-text-muted;
+    font-size: 0.875rem;
+    font-style: italic;
+}

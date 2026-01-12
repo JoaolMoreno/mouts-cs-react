@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Phone> Phones => Set<Phone>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +47,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(rt => rt.Id);
             entity.Property(rt => rt.Token).IsRequired();
             entity.HasIndex(rt => rt.Token);
+        });
+
+        modelBuilder.Entity<Phone>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Number).IsRequired().HasMaxLength(20);
+            entity.Property(p => p.Type).HasMaxLength(50);
+
+            entity.HasIndex(p => p.Number).IsUnique();
         });
 
         base.OnModelCreating(modelBuilder);

@@ -81,6 +81,33 @@ public class EmployeeServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_should_create_employee_with_phones()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var phones = new List<PhoneDto>
+        {
+            new("123456789", "Home", true),
+            new("987654321", "Work", false)
+        };
+        var req = new EmployeeCreateRequest("John", "Doe", "john@test.com", "123", role.Id, DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-20)), "secret123", phones);
+
+        var response = await sut.CreateAsync(req, DirectorContext());
+
+        response.Should().NotBeNull();
+        response.Phones.Should().HaveCount(2);
+        response.Phones.Should().Contain(p => p.Number == "123456789" && p.Type == "Home" && p.IsPrimary);
+        response.Phones.Should().Contain(p => p.Number == "987654321" && p.Type == "Work" && !p.IsPrimary);
+
+        var created = await db.Employees.Include(e => e.Phones).FirstAsync(e => e.Id == response.Id);
+        created.Phones.Should().HaveCount(2);
+    }
+
+    [Fact]
     public async Task GetAsync_non_director_should_filter_by_manager()
     {
         using var db = CreateDb();
@@ -165,8 +192,8 @@ public class EmployeeServiceTests
 
         response.Should().NotBeNull();
         var updated = await db.Employees.FirstAsync(e => e.Id == employee.Id);
-        updated.FirstName.Should().Be("New");
-        updated.LastName.Should().Be("Name");
+        updated.FirstName.Should().Be("NEW");
+        updated.LastName.Should().Be("NAME");
         updated.Email.Should().Be("new@test.com");
         updated.Document.Should().Be("doc-new");
         updated.PasswordHash.Should().NotBe("newpass");
@@ -758,6 +785,259 @@ public class EmployeeServiceTests
 
         var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, managerId, true);
         await FluentActions.Invoking(() => sut.UpdateAsync(employeeId, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Cannot specify ManagerId when RemoveManager is true");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_update_phones()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var current = DirectorContext();
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            Document = "123",
+            RoleId = role.Id,
+            ManagerId = current.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee);
+        // Add initial phones
+        db.Phones.AddRange(
+            new Phone { EmployeeId = employee.Id, Number = "111111111", Type = "Old", IsPrimary = true },
+            new Phone { EmployeeId = employee.Id, Number = "222222222", Type = "Old2", IsPrimary = false }
+        );
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var newPhones = new List<PhoneDto>
+        {
+            new("333333333", "New", true),
+            new("444444444", "New2", false),
+            new("555555555", null, false)
+        };
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, null, false, newPhones);
+
+        var response = await sut.UpdateAsync(employee.Id, update, current);
+
+        response.Should().NotBeNull();
+        response.Phones.Should().HaveCount(3);
+        response.Phones.Should().Contain(p => p.Number == "333333333" && p.Type == "New" && p.IsPrimary);
+        response.Phones.Should().Contain(p => p.Number == "444444444" && p.Type == "New2" && !p.IsPrimary);
+        response.Phones.Should().Contain(p => p.Number == "555555555" && p.Type == null && !p.IsPrimary);
+
+        var updatedPhones = await db.Phones.Where(p => p.EmployeeId == employee.Id).ToListAsync();
+        updatedPhones.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task CreateAsync_should_fail_when_phone_number_already_in_use()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        // Create first employee with a phone
+        var employee1 = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Existing",
+            LastName = "User",
+            Email = "existing@test.com",
+            Document = "doc1",
+            RoleId = role.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee1);
+        db.Phones.Add(new Phone { EmployeeId = employee1.Id, Number = "123456789", Type = "Home", IsPrimary = true });
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var phones = new List<PhoneDto>
+        {
+            new("123456789", "Work", false) // Same number
+        };
+        var req = new EmployeeCreateRequest("John", "Doe", "john@test.com", "doc2", role.Id, DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-20)), "secret123", phones);
+
+        await FluentActions.Invoking(() => sut.CreateAsync(req, DirectorContext())).Should().ThrowAsync<InvalidOperationException>().WithMessage("Phone number(s) already in use: 123456789");
+    }
+
+    [Fact]
+    public async Task CreateAsync_should_fail_when_multiple_primary_phones()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var phones = new List<PhoneDto>
+        {
+            new("123456789", "Home", true),
+            new("987654321", "Work", true) // Another primary
+        };
+        var req = new EmployeeCreateRequest("John", "Doe", "john@test.com", "123", role.Id, DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-20)), "secret123", phones);
+
+        await FluentActions.Invoking(() => sut.CreateAsync(req, DirectorContext())).Should().ThrowAsync<InvalidOperationException>().WithMessage("Only one phone can be primary");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_fail_when_phone_number_already_in_use_by_another_employee()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var current = DirectorContext();
+        // Create first employee with a phone
+        var employee1 = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Existing",
+            LastName = "User",
+            Email = "existing@test.com",
+            Document = "doc1",
+            RoleId = role.Id,
+            ManagerId = current.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee1);
+        db.Phones.Add(new Phone { EmployeeId = employee1.Id, Number = "123456789", Type = "Home", IsPrimary = true });
+        await db.SaveChangesAsync();
+
+        // Create second employee
+        var employee2 = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Second",
+            LastName = "User",
+            Email = "second@test.com",
+            Document = "doc2",
+            RoleId = role.Id,
+            ManagerId = current.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee2);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var newPhones = new List<PhoneDto>
+        {
+            new("123456789", "Work", false) // Same number as employee1
+        };
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, null, false, newPhones);
+
+        await FluentActions.Invoking(() => sut.UpdateAsync(employee2.Id, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Phone number(s) already in use: 123456789");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_fail_when_multiple_primary_phones()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var current = DirectorContext();
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            Document = "123",
+            RoleId = role.Id,
+            ManagerId = current.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee);
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var newPhones = new List<PhoneDto>
+        {
+            new("123456789", "Home", true),
+            new("987654321", "Work", true) // Another primary
+        };
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, null, false, newPhones);
+
+        await FluentActions.Invoking(() => sut.UpdateAsync(employee.Id, update, current)).Should().ThrowAsync<InvalidOperationException>().WithMessage("Only one phone can be primary");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_should_succeed_when_reusing_own_phone_numbers()
+    {
+        using var db = CreateDb();
+        var role = new Role { Id = Guid.NewGuid(), Name = "Colaborador", Rank = 3 };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+
+        var current = DirectorContext();
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            Document = "123",
+            RoleId = role.Id,
+            ManagerId = current.Id,
+            BirthDate = new DateOnly(1990, 1, 1),
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow,
+            Role = role
+        };
+        db.Employees.Add(employee);
+        // Add initial phones
+        db.Phones.AddRange(
+            new Phone { EmployeeId = employee.Id, Number = "111111111", Type = "Old", IsPrimary = true },
+            new Phone { EmployeeId = employee.Id, Number = "222222222", Type = "Old2", IsPrimary = false }
+        );
+        await db.SaveChangesAsync();
+
+        var sut = new EmployeeService(db, new BCryptPasswordHasher());
+        var newPhones = new List<PhoneDto>
+        {
+            new("111111111", "Updated", true), // Reuse own number
+            new("333333333", "New", false)
+        };
+        var update = new EmployeeUpdateRequest(null, null, null, null, null, null, null, null, false, newPhones);
+
+        var response = await sut.UpdateAsync(employee.Id, update, current);
+
+        response.Should().NotBeNull();
+        response.Phones.Should().HaveCount(2);
+        response.Phones.Should().Contain(p => p.Number == "111111111" && p.Type == "Updated" && p.IsPrimary);
+        response.Phones.Should().Contain(p => p.Number == "333333333" && p.Type == "New" && !p.IsPrimary);
     }
 
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useEffect, useState } from 'react';
@@ -8,7 +8,7 @@ import api from '@/services/api';
 import { useRouter } from 'next/navigation';
 import { Employee, Role } from '@/types';
 import styles from './EmployeeForm.module.scss';
-import { ArrowLeft, PencilSimple } from '@phosphor-icons/react';
+import { ArrowLeft, PencilSimple, Plus, Trash } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { ManagerSelectModal } from '../ManagerSelectModal/ManagerSelectModal';
 
@@ -23,6 +23,13 @@ const schema = yup.object({
         if (!this.options.context?.isEdit) return !!value;
         return true;
     }),
+    phones: yup.array().of(
+        yup.object().shape({
+            number: yup.string().required('Number is required'),
+            type: yup.string().ensure(),
+            isPrimary: yup.boolean().default(false),
+        })
+    ),
 }).required();
 
 interface EmployeeFormProps {
@@ -38,7 +45,7 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
     const [showManagerModal, setShowManagerModal] = useState(false);
     const [selectedManager, setSelectedManager] = useState<{ id: string; name: string } | null>(null);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
+    const { register, control, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
         resolver: yupResolver(schema),
         context: { isEdit },
         defaultValues: {
@@ -49,7 +56,13 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
             roleId: '',
             birthDate: '',
             password: '',
+            phones: [],
         }
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: 'phones',
     });
 
     useEffect(() => {
@@ -71,6 +84,7 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                 roleId: initialData.roleId,
                 birthDate: initialData.birthDate.split('T')[0],
                 password: '',
+                phones: initialData.phones || [],
             });
 
             if (initialData.managerId && initialData.managerName) {
@@ -200,6 +214,52 @@ export function EmployeeForm({ initialData, isEdit = false }: EmployeeFormProps)
                         <label>Password {isEdit && '(Leave blank to keep current)'}</label>
                         <input type="password" {...register('password')} placeholder="••••••" />
                         {errors.password && <span className={styles.errorMsg}>{errors.password.message}</span>}
+                    </div>
+
+                    <div className={styles.phonesSection}>
+                        <div className={styles.headerRow}>
+                            <h3>Phones</h3>
+                            <button type="button" onClick={() => append({ number: '', type: 'Mobile', isPrimary: false })} className={styles.addPhoneBtn}>
+                                <Plus size={16} weight="bold" />
+                                Add Phone
+                            </button>
+                        </div>
+                        <div className={styles.phoneList}>
+                            {fields.map((field, index) => (
+                                <div key={field.id} className={styles.phoneRow}>
+                                    <div className={styles.inputGroup}>
+                                        <label>Number</label>
+                                        <input
+                                            {...register(`phones.${index}.number`)}
+                                            placeholder="(00) 00000-0000"
+                                        />
+                                        {errors.phones?.[index]?.number && (
+                                            <span className={styles.errorMsg}>{errors.phones[index]?.number?.message}</span>
+                                        )}
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label>Type</label>
+                                        <select {...register(`phones.${index}.type`)}>
+                                            <option value="Mobile">Mobile</option>
+                                            <option value="Home">Home</option>
+                                            <option value="Work">Work</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div className={styles.phonePrimary}>
+                                        <input
+                                            type="checkbox"
+                                            {...register(`phones.${index}.isPrimary`)}
+                                            id={`primary-${index}`}
+                                        />
+                                        <label htmlFor={`primary-${index}`}>Primary</label>
+                                    </div>
+                                    <button type="button" onClick={() => remove(index)} className={styles.removePhoneBtn} title="Remove phone">
+                                        <Trash size={18} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

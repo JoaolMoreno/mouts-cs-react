@@ -11,6 +11,13 @@ export interface Employee {
     managerId?: string;
     birthDate: string;
     createdAtUtc: string;
+    phones: Phone[];
+}
+
+export interface Phone {
+    number: string;
+    type: string;
+    isPrimary: boolean;
 }
 
 export interface Role {

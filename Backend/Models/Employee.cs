@@ -42,5 +42,6 @@ public class Employee
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
-}
 
+    public ICollection<Phone> Phones { get; set; } = new List<Phone>();
+}
